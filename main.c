@@ -138,7 +138,12 @@ CLOSE_AND_EXIT:
 	return 0;
 }
 
-
+/**
+Function Name : getint
+Function Description : Validate the integer number
+Parameter : Integer pointer
+Return : void
+**/
 void getint(int* pnum)
 {
 	char tbuf[BUF_SIZE];

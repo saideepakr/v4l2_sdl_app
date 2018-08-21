@@ -378,7 +378,12 @@ void listControls(void)
      printf("\n");
 }
 
-
+/**
+Function Name : loadControls
+Function Description : Stores the available controls in structure
+Parameter : void
+Return : void pointer
+**/
 void* loadControls(void)
 {
 	int count = 0, idx = 1;
@@ -514,6 +519,12 @@ void* loadControls(void)
     }
 }
 
+/**
+Function Name : releaseControls
+Function Description : Frees the memory in control structure
+Parameter : void
+Return : void
+**/
 void releaseControls(void)
 {
 	if(pcontrol != NULL)
@@ -523,6 +534,12 @@ void releaseControls(void)
 	}
 }
 
+/**
+Function Name : displayControls
+Function Description : Displays the controls
+Parameter : void
+Return : void
+**/
 void displayControls(void)
 {
 	int index;
@@ -536,6 +553,12 @@ void displayControls(void)
 	printf("%d) Exit", index);
 } 
 
+/**
+Function Name : setControlValue
+Function Description : Sets value to specific control
+Parameter : Specific control option and value
+Return : void
+**/
 void setControlValue(int option, int value)
 {
 	struct v4l2_control control;
@@ -553,6 +576,12 @@ void setControlValue(int option, int value)
     printf("\nValue Changed\n");
 }
 
+/**
+Function Name : controlOption
+Function Description : Displays control option for specific control
+Parameter : Specific control option
+Return : void
+**/
 void controlOption(int option)
 {
 	int value, ctrloption;
@@ -668,6 +697,12 @@ void controlOption(int option)
 	}
 }
 
+/**
+Function Name : controlFeature
+Function Description : Controls the whole control feature
+Parameter : NULL
+Return : void pointer
+**/
 void *controlFeature()
 {
 	int option;
