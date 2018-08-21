@@ -14,29 +14,29 @@ Return : 0 for success -1 for failure 1 for bad arguments
 int main(int argc, char **argv)
 {
 	char c;
-    int optidx = 0;
+    	int optidx = 0;
 	struct option longopt[] = {
-	 		{"version"		,0,NULL, 0 },
+		    {"version"		,0,NULL, 0 },
 		    {"device-path"	,1,NULL,'d'},
 		    {"device-info"	,0,NULL,'D'},
 		    {"list-ctrls"	,0,NULL,'c'},
 		    {"list-formats"	,0,NULL,'f'},
-		    {"help"			,0,NULL,'h'},
+		    {"help"		,0,NULL,'h'},
 		    {"frame-count"	,1,NULL,'C'},
-		    {"mmap"			,0,NULL,'m'},
+		    {"mmap"		,0,NULL,'m'},
 		    {"user-ptr"		,0,NULL,'u'},
-		    {"read"			,0,NULL,'r'},
+		    {"read"		,0,NULL,'r'},
 		    {"pix-format"	,1,NULL,'F'},
 		    {"width"		,1,NULL,'w'},
 		    {"height"		,1,NULL,'v'},
-			{"outfile"		,1,NULL,'o'},
-			{"stream"		,0,NULL,'s'},
+		    {"outfile"		,1,NULL,'o'},
+		    {"stream"		,0,NULL,'s'},
 		    {0,0,0,0}
 	};
 	
 	
 	while ((c=getopt_long(argc,argv,"d:C:w:v:F:o:fhDcmurs",longopt,&optidx)) != -1)
-    {
+    	{
         switch ( c )
         {
         	case 0:
@@ -66,39 +66,39 @@ int main(int argc, char **argv)
                 outfile = strdup( optarg );
                 break;
             case 'F':
-				pix_format_str = strdup( optarg );
-				if(pixStr2pixU32(pix_format_str) != 0)
-					goto CLOSE_AND_EXIT;
-                break;
-			case 'f':
-				openDevice(dev_path);
-				listFormats();
-				goto CLOSE_AND_EXIT;
-			case 'c':
-				openDevice(dev_path);
-				listControls();
-				goto CLOSE_AND_EXIT;
-			case 'h':
-				usage(stdout, argv[0]);
-				goto CLOSE_AND_EXIT;
-				
-			case 'm':
-				io = IO_METHOD_MMAP;
-				break;
-			case 'u':
-				io = IO_METHOD_USERPTR;
-				break;
-			case 'r':
-				io = IO_METHOD_READ;
-				break;
-			case 's':
-				streaming = 1;
-				capture = 0;
-				break;
-            default:
-                printf("bad arg\n");
-				usage(stderr, argv[0]);
-				goto CLOSE_AND_EXIT;
+		pix_format_str = strdup( optarg );
+		if(pixStr2pixU32(pix_format_str) != 0)
+			goto CLOSE_AND_EXIT;
+		break;
+		case 'f':
+			openDevice(dev_path);
+			listFormats();
+			goto CLOSE_AND_EXIT;
+		case 'c':
+			openDevice(dev_path);
+			listControls();
+			goto CLOSE_AND_EXIT;
+		case 'h':
+			usage(stdout, argv[0]);
+			goto CLOSE_AND_EXIT;
+			
+		case 'm':
+			io = IO_METHOD_MMAP;
+			break;
+		case 'u':
+			io = IO_METHOD_USERPTR;
+			break;
+		case 'r':
+			io = IO_METHOD_READ;
+			break;
+		case 's':
+			streaming = 1;
+			capture = 0;
+			break;
+	    default:
+		printf("bad arg\n");
+		usage(stderr, argv[0]);
+		goto CLOSE_AND_EXIT;
                 
         }
 	}
@@ -107,26 +107,50 @@ int main(int argc, char **argv)
 	{
 		openDevice(dev_path);
 		init_device();
-        start_capturing();
-        mainloop();
-        stop_capturing();
-        uninit_device();
+		start_capturing();
+		mainloop();
+		stop_capturing();
+		uninit_device();
 	}
+	
+	openDevice(dev_path);
+	if (pthread_create(&thread_control, NULL, controlFeature, NULL))
+	{
+		fprintf(stderr, "create thread failed\n");
+		goto CLOSE_AND_EXIT;
+  	}
 	
 	if(streaming)
 	{
-		openDevice(dev_path);	
+		//openDevice(dev_path);	
 		init_device();	
-        start_capturing();	
-        mainstreamloop();
-        stop_capturing();
-        uninit_device();
+		start_capturing();	
+		mainstreamloop();
+		stop_capturing();
+		uninit_device();
 	}
+	
+	pthread_join(thread_control, NULL);
 	
 CLOSE_AND_EXIT:
 	close_device();
 	printf("\n");
 	return 0;
+}
+
+
+void getint(int* pnum)
+{
+	char tbuf[BUF_SIZE];
+	while(1)
+	{
+		scanf("%s",tbuf);
+		if(sscanf(tbuf, "%d", pnum))
+			break;
+		else
+			printf("\nEnter valid integer number : ");
+	}
+	
 }
 
 /**

@@ -1,7 +1,6 @@
 #include "v4l2.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
-#include <pthread.h>
 #define MAX_FPS_BUF 50
 
 /* Global declaration*/

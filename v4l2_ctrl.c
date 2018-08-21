@@ -377,3 +377,318 @@ void listControls(void)
      }
      printf("\n");
 }
+
+
+void* loadControls(void)
+{
+	int count = 0, idx = 1;
+	struct v4l2_queryctrl queryctrl;
+	struct v4l2_control control;
+	CLEAR(queryctrl);
+	
+	queryctrl.id = V4L2_CTRL_FLAG_NEXT_CTRL;
+	
+	while (0 == ioctl(fd, VIDIOC_QUERYCTRL, &queryctrl)) 
+	{
+    	if (!(queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)) 
+    		count++;
+    	
+        queryctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
+    }
+    
+    if((pcontrol = (CONTROLS*)malloc(sizeof(CONTROLS) * count)) == NULL)
+    {
+    	printf("\nMalloc Fails");
+    	return NULL;
+    }
+    pcontrol->ctrlcount = count;
+    //printf("%d %d", pcontrol->ctrlcount, count);
+    CLEAR(queryctrl);
+	
+	queryctrl.id = V4L2_CTRL_FLAG_NEXT_CTRL;
+	while (0 == ioctl(fd, VIDIOC_QUERYCTRL, &queryctrl)) 
+	{
+    	if (!(queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)) 
+    	{
+    		(pcontrol + idx - 1)->index = idx;
+    		(pcontrol + idx - 1)->uqueryctrl.id = queryctrl.id;
+    		strcpy((pcontrol + idx - 1)->uqueryctrl.name, queryctrl.name);
+    		(pcontrol + idx - 1)->uqueryctrl.type = queryctrl.type;
+    		switch (queryctrl.type) 
+        	{
+        		case V4L2_CTRL_TYPE_INTEGER:
+					//printf("%25s %#8.8x (int)    : min=%d max=%d step=%d default=%d",
+					(pcontrol + idx - 1)->uqueryctrl.minimum = queryctrl.minimum;
+					(pcontrol + idx - 1)->uqueryctrl.maximum = queryctrl.maximum;
+					(pcontrol + idx - 1)->uqueryctrl.step = queryctrl.step;
+					(pcontrol + idx - 1)->uqueryctrl.default_value = queryctrl.default_value;
+				break;
+				
+				case V4L2_CTRL_TYPE_INTEGER64:
+					//printf("%25s %#8.8x (int64)  : min=%d max=%d step=%d default=%d",
+							//queryctrl.name, queryctrl.id,
+					(pcontrol + idx - 1)->uqueryctrl.minimum = queryctrl.minimum;
+					(pcontrol + idx - 1)->uqueryctrl.maximum = queryctrl.maximum;
+					(pcontrol + idx - 1)->uqueryctrl.step = queryctrl.step;
+					(pcontrol + idx - 1)->uqueryctrl.default_value = queryctrl.default_value;		
+					break;
+					
+				case V4L2_CTRL_TYPE_STRING:
+					//printf("%25s %#8.8x (str)    : min=%d max=%d step=%d",
+						//	queryctrl.name, queryctrl.id,
+					(pcontrol + idx - 1)->uqueryctrl.minimum = queryctrl.minimum;
+					(pcontrol + idx - 1)->uqueryctrl.maximum = queryctrl.maximum;
+					(pcontrol + idx - 1)->uqueryctrl.step = queryctrl.step;
+					break;
+				case V4L2_CTRL_TYPE_BOOLEAN:
+					//printf("%25s %#8.8x (bool)   : default=%d",
+					(pcontrol + idx - 1)->uqueryctrl.default_value = queryctrl.default_value;
+					(pcontrol + idx - 1)->uqueryctrl.minimum = 0;
+					(pcontrol + idx - 1)->uqueryctrl.maximum = 1;	
+					break;
+				case V4L2_CTRL_TYPE_MENU:
+					//printf("%25s %#8.8x (menu)   : min=%d max=%d default=%d",
+						//	queryctrl.name, queryctrl.id,
+					(pcontrol + idx - 1)->uqueryctrl.minimum = queryctrl.minimum;
+					(pcontrol + idx - 1)->uqueryctrl.maximum = queryctrl.maximum;
+					(pcontrol + idx - 1)->uqueryctrl.default_value = queryctrl.default_value;
+					//loadMenu(queryctrl);
+					break;
+				case V4L2_CTRL_TYPE_INTEGER_MENU:
+					//printf("%25s %#8.8x (intmenu): min=%d max=%d default=%d",
+						//	queryctrl.name, queryctrl.id,
+					(pcontrol + idx - 1)->uqueryctrl.minimum = queryctrl.minimum;
+					(pcontrol + idx - 1)->uqueryctrl.maximum = queryctrl.maximum;
+					(pcontrol + idx - 1)->uqueryctrl.default_value = queryctrl.default_value;
+					//loadMenu(queryctrl);
+					break;
+				case V4L2_CTRL_TYPE_BUTTON:
+					//printf("%25s %#8.8x (button) :", queryctrl.name, queryctrl.id);
+					break;
+				case V4L2_CTRL_TYPE_BITMASK:
+					//printf("%25s %#8.8x (bitmask): max=0x%08x default=0x%08x",
+					(pcontrol + idx - 1)->uqueryctrl.maximum = queryctrl.maximum;
+					(pcontrol + idx - 1)->uqueryctrl.default_value = queryctrl.default_value;
+					break;
+				case V4L2_CTRL_TYPE_U8:
+					//printf("%25s %#8.8x (u8)     : min=%d max=%d step=%d default=%d",
+					(pcontrol + idx - 1)->uqueryctrl.minimum = queryctrl.minimum;
+					(pcontrol + idx - 1)->uqueryctrl.maximum = queryctrl.maximum;
+					(pcontrol + idx - 1)->uqueryctrl.step = queryctrl.step;
+					(pcontrol + idx - 1)->uqueryctrl.default_value = queryctrl.default_value;		
+					break;
+				case V4L2_CTRL_TYPE_U16:
+					//printf("%25s %#8.8x (u16)    : min=%d max=%d step=%d default=%d",
+					(pcontrol + idx - 1)->uqueryctrl.minimum = queryctrl.minimum;
+					(pcontrol + idx - 1)->uqueryctrl.maximum = queryctrl.maximum;
+					(pcontrol + idx - 1)->uqueryctrl.step = queryctrl.step;
+					(pcontrol + idx - 1)->uqueryctrl.default_value = queryctrl.default_value;		
+					break;
+				case V4L2_CTRL_TYPE_U32:
+					//printf("%25s %#8.8x (u32)    : min=%d max=%d step=%d default=%d",
+					(pcontrol + idx - 1)->uqueryctrl.minimum = queryctrl.minimum;
+					(pcontrol + idx - 1)->uqueryctrl.maximum = queryctrl.maximum;
+					(pcontrol + idx - 1)->uqueryctrl.step = queryctrl.step;
+					(pcontrol + idx - 1)->uqueryctrl.default_value = queryctrl.default_value;		
+					break;
+				default:
+					//printf("%25s %#8.8x (unknown): type=%x",
+							//queryctrl.name, queryctrl.id, queryctrl.type);
+					break;
+			
+        	}
+        	CLEAR(control);
+			control.id = queryctrl.id;
+			(pcontrol + idx - 1)->ucontrol.id = control.id;
+			
+			if (0 == ioctl(fd, VIDIOC_G_CTRL, &control)) 
+			{
+				(pcontrol + idx - 1)->ucontrol.value = control.value;
+				//printf(" value=%d %d ", control.value, (pcontrol + idx - 1)->ucontrol.value = control.value);
+			}
+			idx++;
+			
+        }
+        
+        queryctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
+    }
+}
+
+void releaseControls(void)
+{
+	if(pcontrol != NULL)
+	{
+		free(pcontrol);
+		pcontrol = NULL;
+	}
+}
+
+void displayControls(void)
+{
+	int index;
+	printf("\n*********************************************************************\n");
+	printf("\tFeature Control");
+	printf("\n*********************************************************************\n");
+	for(index = 1; index <= pcontrol->ctrlcount; index++)
+	{
+		printf("%d) %s\n", index, (pcontrol + index - 1)->uqueryctrl.name);
+	}
+	printf("%d) Exit", index);
+} 
+
+void setControlValue(int option, int value)
+{
+	struct v4l2_control control;
+	control.id =  (pcontrol + option - 1)->ucontrol.id;
+	control.value = value;
+	if (-1 == ioctl(fd, VIDIOC_S_CTRL, &control) && errno != ERANGE) 
+	{
+		if(errno == EIO)
+			printf("\nEnter manual mode and then change the value\n");
+		else
+        	perror("VIDIOC_S_CTRL");
+        return;
+    }
+    (pcontrol + option - 1)->ucontrol.value = control.value;
+    printf("\nValue Changed\n");
+}
+
+void controlOption(int option)
+{
+	int value, ctrloption;
+	printf("\n*********************************************************************\n");
+	switch((pcontrol + option - 1)->uqueryctrl.type)
+	{
+		case V4L2_CTRL_TYPE_INTEGER:
+					printf("%25s %#8.8x (int)    : min=%d max=%d step=%d default=%d",
+					(pcontrol + option - 1)->uqueryctrl.name, (pcontrol + option - 1)->uqueryctrl.id,
+					(pcontrol + option - 1)->uqueryctrl.minimum, (pcontrol + option - 1)->uqueryctrl.maximum,
+					(pcontrol + option - 1)->uqueryctrl.step, (pcontrol + option - 1)->uqueryctrl.default_value);
+				break;
+				
+				case V4L2_CTRL_TYPE_INTEGER64:
+					printf("%25s %#8.8x (int64)  : min=%d max=%d step=%d default=%d",
+							(pcontrol + option - 1)->uqueryctrl.name, (pcontrol + option - 1)->uqueryctrl.id,
+							(pcontrol + option - 1)->uqueryctrl.minimum, (pcontrol + option - 1)->uqueryctrl.maximum,
+							(pcontrol + option - 1)->uqueryctrl.step, (pcontrol + option - 1)->uqueryctrl.default_value);
+					break;
+				case V4L2_CTRL_TYPE_STRING:
+					printf("%25s %#8.8x (str)    : min=%d max=%d step=%d",
+							(pcontrol + option - 1)->uqueryctrl.name, (pcontrol + option - 1)->uqueryctrl.id,
+							(pcontrol + option - 1)->uqueryctrl.minimum, (pcontrol + option - 1)->uqueryctrl.maximum,
+							(pcontrol + option - 1)->uqueryctrl.step);
+					break;
+				case V4L2_CTRL_TYPE_BOOLEAN:
+					printf("%25s %#8.8x (bool)   : default=%d",
+							(pcontrol + option - 1)->uqueryctrl.name, (pcontrol + option - 1)->uqueryctrl.id, 
+							(pcontrol + option - 1)->uqueryctrl.default_value);
+					break;
+				case V4L2_CTRL_TYPE_MENU:
+					printf("%25s %#8.8x (menu)   : min=%d max=%d default=%d",
+							(pcontrol + option - 1)->uqueryctrl.name, (pcontrol + option - 1)->uqueryctrl.id,
+							(pcontrol + option - 1)->uqueryctrl.minimum, (pcontrol + option - 1)->uqueryctrl.maximum,
+							(pcontrol + option - 1)->uqueryctrl.default_value);
+					//enumerateMenu((pcontrol + option - 1)->uqueryctrl);
+					break;
+				case V4L2_CTRL_TYPE_INTEGER_MENU:
+					printf("%25s %#8.8x (intmenu): min=%d max=%d default=%d",
+							(pcontrol + option - 1)->uqueryctrl.name, (pcontrol + option - 1)->uqueryctrl.id,
+							(pcontrol + option - 1)->uqueryctrl.minimum, (pcontrol + option - 1)->uqueryctrl.maximum,
+							(pcontrol + option - 1)->uqueryctrl.default_value);
+					//enumerateMenu(queryctrl);
+					break;
+				case V4L2_CTRL_TYPE_BUTTON:
+					printf("%25s %#8.8x (button) :", (pcontrol + option - 1)->uqueryctrl.name, (pcontrol + option - 1)->uqueryctrl.id);
+					break;
+				case V4L2_CTRL_TYPE_BITMASK:
+					printf("%25s %#8.8x (bitmask): max=0x%08x default=0x%08x",
+							(pcontrol + option - 1)->uqueryctrl.name, (pcontrol + option - 1)->uqueryctrl.id, 
+							(pcontrol + option - 1)->uqueryctrl.maximum,
+							(pcontrol + option - 1)->uqueryctrl.default_value);
+					break;
+				case V4L2_CTRL_TYPE_U8:
+					printf("%25s %#8.8x (u8)     : min=%d max=%d step=%d default=%d",
+							(pcontrol + option - 1)->uqueryctrl.name, (pcontrol + option - 1)->uqueryctrl.id,
+							(pcontrol + option - 1)->uqueryctrl.minimum, (pcontrol + option - 1)->uqueryctrl.maximum,
+							(pcontrol + option - 1)->uqueryctrl.step, (pcontrol + option - 1)->uqueryctrl.default_value);
+					break;
+				case V4L2_CTRL_TYPE_U16:
+					printf("%25s %#8.8x (u16)    : min=%d max=%d step=%d default=%d",
+							(pcontrol + option - 1)->uqueryctrl.name, (pcontrol + option - 1)->uqueryctrl.id,
+							(pcontrol + option - 1)->uqueryctrl.minimum, (pcontrol + option - 1)->uqueryctrl.maximum,
+							(pcontrol + option - 1)->uqueryctrl.step, (pcontrol + option - 1)->uqueryctrl.default_value);
+					break;
+				case V4L2_CTRL_TYPE_U32:
+					printf("%25s %#8.8x (u32)    : min=%d max=%d step=%d default=%d",
+							(pcontrol + option - 1)->uqueryctrl.name, (pcontrol + option - 1)->uqueryctrl.id,
+							(pcontrol + option - 1)->uqueryctrl.minimum, (pcontrol + option - 1)->uqueryctrl.maximum,
+							(pcontrol + option - 1)->uqueryctrl.step, (pcontrol + option - 1)->uqueryctrl.default_value);
+					break;
+				default:
+					printf("%25s %#8.8x (unknown): type=%x",
+							(pcontrol + option - 1)->uqueryctrl.name, (pcontrol + option - 1)->uqueryctrl.id, 
+							(pcontrol + option - 1)->uqueryctrl.type);
+					break;
+	}
+	printf("\n*********************************************************************\n");
+	
+	while(1)
+	{
+		printf("1) Change %s\n", (pcontrol + option - 1)->uqueryctrl.name);
+		printf("2) Exit\n");
+		printf("\nEnter the option : ");
+		getint(&ctrloption);
+		if(ctrloption == 2)
+			break;
+		else if(ctrloption < 1 || ctrloption > 2)
+		{
+			printf("\nEnter the valid option\n");
+			continue;
+		}
+		else
+		{
+			printf("\nNote Current %s value = %d", (pcontrol + option - 1)->uqueryctrl.name, (pcontrol + option - 1)->ucontrol.value);
+			while(1)
+			{
+				printf("\nEnter the value : ");
+				getint(&value);
+				if(value < (pcontrol + option - 1)->uqueryctrl.minimum || value > (pcontrol + option - 1)->uqueryctrl.maximum)
+				{
+					printf("\nEnter valid value within range ");
+					continue;
+				}
+				else
+				{
+					setControlValue(option, value);
+					break;
+				}
+			}
+			break;
+		}
+	}
+}
+
+void *controlFeature()
+{
+	int option;
+	if(loadControls() == NULL)
+		return NULL;
+	while(1)
+	{
+		displayControls();
+		printf("\nEnter the option : ");
+		getint(&option);
+		if(option == (pcontrol->ctrlcount + 1))
+			break;
+		else if(option > (pcontrol->ctrlcount + 1) ||  option < 1)
+		{
+			printf("Enter valid option");
+			continue;
+		}
+		else
+			controlOption(option);
+		
+	}
+	releaseControls();
+	return NULL;
+}

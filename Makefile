@@ -4,7 +4,6 @@ CFLAGS=-c
 
 LDFLAGS = -lSDL2_ttf -lSDL2 -lpthread
 INC_DIR = $(shell pkg-config --cflags sdl2)
-#INC_DIRT = $(shell pkg-config --cflags sdl2)
 
 
 

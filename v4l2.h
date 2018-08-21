@@ -12,7 +12,7 @@
 #include <sys/time.h>
 #include <sys/mman.h>
 #include <sys/ioctl.h>
-
+#include <pthread.h>
 #include<linux/videodev2.h>
 
 
@@ -28,4 +28,11 @@ struct buffer {
         void   *start;
         unsigned int  length;
 };
+
+typedef struct controls
+{
+	int ctrlcount, index;
+	struct v4l2_queryctrl uqueryctrl;
+	struct v4l2_control ucontrol;
+}CONTROLS;
 

@@ -5,6 +5,7 @@
 #define PIXEL_FORMAT "YUYV"
 #define WIDTH 640
 #define HEIGHT 480
+#define BUF_SIZE 15
 
 /* Global Varibles */
 int fd = -1;
@@ -15,10 +16,15 @@ unsigned int n_buffers;
 unsigned int width = WIDTH, height = HEIGHT, capture = 0, frame_count = 1, type = V4L2_CAP_VIDEO_CAPTURE, pix_format = v4l2_fourcc('Y', 'U', 'Y', 'V'), streaming = 1;
 struct timeval start_time, end_time;
 double elapsed_time;
+pthread_t thread_control;
+CONTROLS *pcontrol = NULL;
 
 /* Function declaration */
 void usage( FILE *fp, char * name );
 int pixStr2pixU32(char* pix_format_str);
+void getint(int* pnum);
+
 
 /* Extern function declaration */
 extern void mainstreamloop(void);
+extern void *controlFeature();
