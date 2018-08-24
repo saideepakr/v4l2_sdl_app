@@ -163,7 +163,6 @@ void mainstreamloop()
 	SDL_Event e;
 	while (!quit) 
 	{
-		//SDL_PollEvent(NULL);
 		while (SDL_PollEvent(&e)) 
 		{
 			if (e.type == SDL_QUIT) { // click close icon then quit
@@ -175,10 +174,13 @@ void mainstreamloop()
 					quit = 1;
 			}
 		}
+		if(thread_exit_sig == 1)
+			quit = 1;
 		usleep(25);
 	}
 	thread_exit_sig = 1;               // exit thread_stream
 	pthread_join(thread_stream, NULL); // wait for thread_stream exiting
+	thread_exit_sig = 0; 
 	SDL_DestroyTexture(Message);
 	SDL_DestroyTexture(sdlTexture);
 	SDL_FreeSurface(surfaceMessage);
@@ -187,4 +189,52 @@ void mainstreamloop()
 	SDL_DestroyWindow(sdlScreen);
 	TTF_Quit();
 	SDL_Quit();
+}
+
+
+void *streamFun()
+{
+	openDevice(dev_path);	
+	init_device();	
+	start_capturing();	
+	mainstreamloop();
+	stop_capturing();
+	uninit_device();
+}
+
+void display_streamingMenu(void)
+{
+	printf("\n*********************************************************************\n");
+	printf("\t\tStreaming Menu");
+	printf("\n*********************************************************************\n");
+	printf("\n1) Select Format");
+	printf("\n2) Stream ON");
+	printf("\n3) Stream OFF");
+	printf("\n4) Exit from Streaming menu");
+}
+
+void streamingMenu(void)
+{
+	int option;
+	while(1)
+	{
+		display_streamingMenu();
+		printf("\nEnter the option : ");
+		getint(&option);
+		switch(option)
+		{
+			case SELECT_FORMAT:
+				break;
+			case STREAM_ON:
+				break;
+			case STREAM_OFF:
+				break;
+			case EXIT_STREAMING:
+				break;
+			default: 
+				printf("\nEnter valid option");
+		}
+		if(option == EXIT_STREAMING)
+			break;
+	}
 }

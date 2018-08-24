@@ -279,6 +279,29 @@ Return : void
 **/
 void listControls(void)
 {
+	struct v4l2_capability cap;
+	
+	if (-1 == ioctl(fd, VIDIOC_QUERYCAP, &cap)) 
+ 	{
+            if (EINVAL == errno) 
+            {
+                    fprintf(stderr, "%s is no V4L2 device\\n",
+                             dev_path);
+                    exit(EXIT_FAILURE);
+            } 
+            else 
+            {
+                    errno_exit("VIDIOC_QUERYCAP");
+            }
+ 	}
+ 
+ 	if(!cap.capabilities & V4L2_CAP_VIDEO_CAPTURE)
+ 	{
+ 		printf("\t\tVideo Capture is not supported\n");
+ 		return;
+ 		
+ 	}
+ 	
 	struct v4l2_queryctrl queryctrl;
 	struct v4l2_control control;
 	
@@ -700,14 +723,14 @@ void controlOption(int option)
 /**
 Function Name : controlFeature
 Function Description : Controls the whole control feature
-Parameter : NULL
+Parameter : integer
 Return : void pointer
 **/
-void *controlFeature()
+int controlFeature()
 {
 	int option;
 	if(loadControls() == NULL)
-		return NULL;
+		return -1;
 	while(1)
 	{
 		displayControls();
@@ -717,7 +740,7 @@ void *controlFeature()
 			break;
 		else if(option > (pcontrol->ctrlcount + 1) ||  option < 1)
 		{
-			printf("Enter valid option");
+			printf("\nEnter valid option");
 			continue;
 		}
 		else
@@ -725,5 +748,172 @@ void *controlFeature()
 		
 	}
 	releaseControls();
-	return NULL;
+	return 0;
+}
+
+void* loadFormats()
+{
+	struct v4l2_fmtdesc fmt;
+	struct v4l2_frmsizeenum frmsize;
+	struct v4l2_frmivalenum frmival;
+	
+	fmt.index = 0;
+	fmt.type = type;
+	while (ioctl(fd, VIDIOC_ENUM_FMT, &fmt) >= 0) 
+		fmt.index++;
+	format.fmtcount = fmt.index;
+	if((format.ufmtdesc = (struct v4l2_ufmtdesc*)malloc(format.fmtcount * sizeof(struct v4l2_ufmtdesc))) == NULL)
+	{
+		printf("\nMalloc fails");
+		return NULL;
+	}
+	fmt.index = 0;
+	fmt.type = type;
+	while (ioctl(fd, VIDIOC_ENUM_FMT, &fmt) >= 0) 
+	{
+		//printf(" %u ",fmt.index);
+		//format.(*(ufmtdesc + fmt.index)).index = fmt.index;
+		//format.ufmtdesc[fmt.index].index = fmt.index;
+		//printf(" %u ",format.ufmtdesc[fmt.index].index);
+		//format.ufmtdesc[fmt.index].type = fmt.type;
+		//format.ufmtdesc[fmt.index].flags = fmt.
+		//format.ufmtdesc[fmt.index].
+		//format.ufmtdesc[fmt.index].
+		memcpy(&format.ufmtdesc[fmt.index], &fmt, sizeof(fmt));
+		//printf(" %u ",format.ufmtdesc[fmt.index].index);
+		frmsize.pixel_format = fmt.pixelformat;
+		frmsize.index = 0;
+		while (ioctl(fd, VIDIOC_ENUM_FRAMESIZES, &frmsize) >= 0)
+			frmsize.index++;
+		format.ufmtdesc[fmt.index].frmcount = frmsize.index;
+		if((format.ufmtdesc[fmt.index].ufrmsizeenum = (struct v4l2_ufrmsizeenum*)malloc(format.ufmtdesc[fmt.index].frmcount * sizeof(struct v4l2_ufrmsizeenum))) == NULL)
+		{
+			printf("\nMalloc fails");
+			return NULL;
+		}
+		frmsize.index = 0;
+		while (ioctl(fd, VIDIOC_ENUM_FRAMESIZES, &frmsize) >= 0) 
+		{
+			memcpy(&format.ufmtdesc[fmt.index].ufrmsizeenum[frmsize.index], &frmsize, sizeof(frmsize));
+			
+			if (frmsize.type == V4L2_FRMSIZE_TYPE_DISCRETE) 
+			{
+				frmival.index = 0;
+				frmival.pixel_format = fmt.pixelformat;
+				frmival.width = frmsize.discrete.width;
+				frmival.height = frmsize.discrete.height;
+				while (ioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS, &frmival) >= 0)
+					frmival.index++;
+				format.ufmtdesc[fmt.index].ufrmsizeenum [frmsize.index].fpscount = frmival.index;
+				if((format.ufmtdesc[fmt.index].ufrmsizeenum [frmsize.index].frmivalenum = (struct v4l2_frmivalenum*)malloc(frmival.index * sizeof(struct v4l2_ufrmsizeenum))) == NULL)
+				{
+					printf("\nMalloc fails");
+					return NULL;
+				}
+				
+				frmival.index = 0;
+				while (ioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS, &frmival) >= 0)
+				{
+					memcpy(&format.ufmtdesc[fmt.index].ufrmsizeenum [frmsize.index].frmivalenum[frmival.index], &frmival, sizeof(frmival));
+					frmival.index++;
+				}
+			}
+			frmsize.index++;
+		}
+		fmt.index++;
+	}
+}
+
+void displayFormats(void)
+{
+	int index;
+	//printf("\nformat.fmtcount = %u", format.fmtcount);
+	//printf("\nformat = %u %u", format.ufmtdesc[0].type, format.ufmtdesc[0].frmcount);
+	for(index = 0; index < format.fmtcount; index++)
+		printf("\n%d) %s", index + 1, format.ufmtdesc[index].description);
+	printf("\n%d) Exit from Format", index + 1);
+}
+
+void displayResolution(int option)
+{
+	int index;
+	for(index = 0; index < format.ufmtdesc[option - 1].frmcount; index++)
+	{
+		if(format.ufmtdesc[option - 1].ufrmsizeenum[index].type == V4L2_FRMSIZE_TYPE_DISCRETE)
+		{
+			printf("\n%d) Width*Height %uX%u", index+1, format.ufmtdesc[option - 1].ufrmsizeenum[index].discrete.width, format.ufmtdesc[option - 1].ufrmsizeenum[index].discrete.height);
+		}
+	}
+	printf("\n%d) Exit from Resolution", index + 1);
+}
+
+void displayFPS(int format_option, int frame_option)
+{
+	int index;
+	for(index = 0; index < format.ufmtdesc[format_option].ufrmsizeenum[frame_option].fpscount; index++)
+	{
+		if(format.ufmtdesc[format_option].ufrmsizeenum [frame_option].frmivalenum[index].type == V4L2_FRMIVAL_TYPE_DISCRETE)	
+		{
+			printf("\n%d) ", index + 1);
+			fract2sec(format.ufmtdesc[format_option].ufrmsizeenum [frame_option].frmivalenum[index].discrete);
+			fract2fps(format.ufmtdesc[format_option].ufrmsizeenum [frame_option].frmivalenum[index].discrete);
+		}
+	}
+	printf("\n%d) Exit from FPS", index + 1);
+}
+
+int selectFormat(void)
+{
+	int format_option, frame_option, fps_option;
+	if(loadFormats() == NULL)
+		return -1;
+	while(1)
+	{
+		displayFormats();
+		printf("\nEnter the option : ");
+		getint(&format_option);
+		if(format_option == format.fmtcount + 1)
+			break;
+		else if(format_option < 1 || format_option > format.fmtcount + 1)
+		{
+			printf("\nEnter Valid option");
+			continue;
+		}
+		else
+		{	
+			while(1)
+			{
+				displayResolution(format_option);
+				printf("\nEnter the option : ");
+				getint(&frame_option);
+				if(frame_option == format.ufmtdesc[format_option - 1].frmcount + 1)
+					break;
+				else if(frame_option < 1 || frame_option > format.ufmtdesc[format_option - 1].frmcount + 1)
+				{
+					printf("\nEnter Valid option");
+					continue;
+				}
+				else
+				{
+					while(1)
+					{
+						displayFPS(format_option - 1, frame_option - 1);
+						printf("\nEnter the option : ");
+						getint(&fps_option);
+						if(fps_option == format.ufmtdesc[format_option - 1].ufrmsizeenum[frame_option - 1].fpscount + 1)
+							break;
+						else if(fps_option < 1 || fps_option > format.ufmtdesc[format_option - 1].ufrmsizeenum[frame_option - 1].fpscount + 1)
+						{
+							printf("\nEnter Valid option");
+							continue;
+						}
+						break;
+					}
+				}
+				break;
+			}
+		}
+		break;
+	}
+	return 0;
 }

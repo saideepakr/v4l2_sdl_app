@@ -66,77 +66,118 @@ int main(int argc, char **argv)
                 outfile = strdup( optarg );
                 break;
             case 'F':
-		pix_format_str = strdup( optarg );
-		if(pixStr2pixU32(pix_format_str) != 0)
-			goto CLOSE_AND_EXIT;
-		break;
-		case 'f':
-			openDevice(dev_path);
-			listFormats();
-			goto CLOSE_AND_EXIT;
-		case 'c':
-			openDevice(dev_path);
-			listControls();
-			goto CLOSE_AND_EXIT;
-		case 'h':
-			usage(stdout, argv[0]);
-			goto CLOSE_AND_EXIT;
-			
-		case 'm':
-			io = IO_METHOD_MMAP;
-			break;
-		case 'u':
-			io = IO_METHOD_USERPTR;
-			break;
-		case 'r':
-			io = IO_METHOD_READ;
-			break;
-		case 's':
-			streaming = 1;
-			capture = 0;
-			break;
-	    default:
-		printf("bad arg\n");
-		usage(stderr, argv[0]);
-		goto CLOSE_AND_EXIT;
+				pix_format_str = strdup( optarg );
+				if(pixStr2pixU32(pix_format_str) != 0)
+					goto CLOSE_AND_EXIT;
+				break;
+			case 'f':
+				openDevice(dev_path);
+				listFormats();
+				goto CLOSE_AND_EXIT;
+			case 'c':
+				openDevice(dev_path);
+				listControls();
+				goto CLOSE_AND_EXIT;
+			case 'h':
+				usage(stdout, argv[0]);
+				goto CLOSE_AND_EXIT;
+		
+		   	case 'm':
+				io = IO_METHOD_MMAP;
+				break;
+			case 'u':
+				io = IO_METHOD_USERPTR;
+				break;
+			case 'r':
+				io = IO_METHOD_READ;
+				break;
+		 	case 's':
+				streaming = 1;
+				capture = 0;
+				break;
+			default:
+				printf("bad arg\n");
+				usage(stderr, argv[0]);
+				goto CLOSE_AND_EXIT;
                 
         }
 	}
 	
 	if(capture)
 	{
-		openDevice(dev_path);
-		init_device();
-		start_capturing();
-		mainloop();
-		stop_capturing();
-		uninit_device();
+		captureFun();
+		goto CLOSE_AND_EXIT;
 	}
-	
-	openDevice(dev_path);
-	if (pthread_create(&thread_control, NULL, controlFeature, NULL))
+
+	if (pthread_create(&thread_streaming, NULL, streamFun, NULL))
 	{
 		fprintf(stderr, "create thread failed\n");
 		goto CLOSE_AND_EXIT;
   	}
 	
-	if(streaming)
+	v4l2Menu();
+	//openDevice(dev_path);
+	/*if (pthread_create(&thread_control, NULL, controlFeature, NULL))
 	{
-		//openDevice(dev_path);	
-		init_device();	
-		start_capturing();	
-		mainstreamloop();
-		stop_capturing();
-		uninit_device();
-	}
+		fprintf(stderr, "create thread failed\n");
+		goto CLOSE_AND_EXIT;
+  	}*/
 	
-	pthread_join(thread_control, NULL);
+	//pthread_join(thread_control, NULL);
 	
 CLOSE_AND_EXIT:
 	close_device();
 	printf("\n");
 	return 0;
 }
+
+void display_v4l2Menu()
+{
+	printf("\n1) Still Capture");
+	printf("\n2) Streaming");
+	printf("\n3) Control Feature");
+	printf("\n4) Exit");
+}
+
+void v4l2Menu(void)
+{
+	int option;
+	printf("\n*********************************************************************\n");
+	printf("\t\tCamera Application");
+	printf("\n*********************************************************************\n");
+	while(1)
+	{
+		display_v4l2Menu();
+		printf("\nEnter the option : ");
+		getint(&option);
+		switch(option)
+		{
+			case STILL_CAPTURE:
+				captureMenu();
+				break;
+			
+			case STREAMING:
+				streamingMenu();
+				break;
+			
+			case FEATURE:
+				if(controlFeature() != 0)
+					option = EXIT;
+				break;
+			
+			case EXIT:
+				thread_exit_sig = 1;
+				break;
+			
+			default:
+				printf("\nEnter valid option");
+				
+		}
+		if(option == EXIT)
+			break;
+	}
+}
+
 
 /**
 Function Name : getint

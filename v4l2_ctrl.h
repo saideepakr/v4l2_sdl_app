@@ -9,6 +9,9 @@ extern struct timeval start_time, end_time;
 extern double elapsed_time;
 extern CONTROLS *pcontrol;
 
+
+FORMATS format;
+
 /* Function declaration */
 void deviceInfo(void);
 void bufferTypeToString(unsigned int ui_type);
@@ -21,12 +24,17 @@ void print_frmival(const struct v4l2_frmivalenum frmival, const char *prefix);
 int listFormats(void);
 void enumerateMenu(struct v4l2_queryctrl queryctrl);
 void listControls(void);
-void *controlFeature();
+int controlFeature();
 void displayControls(void);
-void* loadControls(void);
+void *loadControls(void);
 void releaseControls(void);
 void controlOption(int option);
 void setControlValue(int option, int value);
+
+int selectFormat(void);
+void displayFormats(void);
+void displayResolution(int);
+void displayFPS(int, int);
 
 /* Extern function declaration */
 extern void getint(int* pnum);

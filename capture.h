@@ -1,3 +1,8 @@
+#define SELECT_FORMAT 1
+#define FRAME_CAPTURE_COUNT 2
+#define TAKE_SNAP 3
+#define EXIT_STILL_CAPTURE 4
+
 /* Global variable declaration */
 int file;
 
@@ -25,6 +30,11 @@ void init_userp(unsigned int buffer_size);
 void init_device(void);
 void openDevice(char* dev_path);
 void close_device(void);
+void captureFun(void);
+void captureMenu(void);
+void display_captureMenu(void);
 
 /* Extern function declaration */
 extern void frame_handler(void *pframe, int length);
+extern void getint(int* pnum);
+extern int selectFormat(void);

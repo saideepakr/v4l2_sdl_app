@@ -2,6 +2,10 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #define MAX_FPS_BUF 50
+#define SELECT_FORMAT 1
+#define STREAM_ON 2
+#define STREAM_OFF 3
+#define EXIT_STREAMING 4
 
 /* Global declaration*/
 pthread_t thread_stream;
@@ -22,6 +26,9 @@ int thread_exit_sig = 0;
 void frame_handler(void *pframe, int length);
 void *v4l2_streaming();
 void mainstreamloop(void);
+void *streamFun();
+void streamingMenu(void);
+void display_streamingMenu(void);
 
 /* Extern variable declaration */
 extern int fd;
@@ -35,3 +42,10 @@ extern double elapsed_time;
 
 /* Extern function declaration */
 extern int read_frame(void);
+extern void getint(int* pnum);
+extern void stop_capturing(void);
+extern void start_capturing(void);
+extern void uninit_device(void);
+extern void init_device(void);
+extern void openDevice(char* dev_path);
+extern void close_device(void);

@@ -567,3 +567,53 @@ void close_device(void)
 
         fd = -1;
 }
+
+
+void captureFun(void)
+{
+	openDevice(dev_path);
+	init_device();
+	start_capturing();
+	mainloop();
+	stop_capturing();
+	uninit_device();
+}
+
+void display_captureMenu(void)
+{
+	printf("\n*********************************************************************\n");
+	printf("\t\tCapture Menu");
+	printf("\n*********************************************************************\n");
+	printf("\n1) Select Format");
+	printf("\n2) Frame Capture Count");
+	printf("\n3) Take snap");
+	printf("\n4) Exit from Still capture menu");
+}
+
+void captureMenu(void)
+{
+	int option;
+	while(1)
+	{
+		display_captureMenu();
+		printf("\nEnter the option : ");
+		getint(&option);
+		switch(option)
+		{
+			case SELECT_FORMAT:
+				if(selectFormat() != 0)
+					option = EXIT_STILL_CAPTURE;
+				break;
+			case FRAME_CAPTURE_COUNT:
+				break;
+			case TAKE_SNAP:
+				break;
+			case EXIT_STILL_CAPTURE:
+				break;
+			default: 
+				printf("\nEnter valid option");
+		}
+		if(option == EXIT_STILL_CAPTURE)
+			break;
+	}
+}
