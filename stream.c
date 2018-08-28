@@ -138,7 +138,7 @@ Return : void
 **/
 void frame_handler(void *pframe, int length) 
 {
-	SDL_UpdateTexture(sdlTexture, &sdlRect, pframe, width * 2);
+	SDL_UpdateTexture(sdlTexture, &sdlRect, pframe, stream_width * 2);
 	//  SDL_UpdateYUVTexture
 	SDL_RenderClear(sdlRenderer);
 	SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, &sdlRect);
@@ -161,6 +161,7 @@ void mainstreamloop()
   	}
 	int quit = 0;
 	SDL_Event e;
+	stream_width = width;
 	while (!quit) 
 	{
 		while (SDL_PollEvent(&e)) 
@@ -194,12 +195,16 @@ void mainstreamloop()
 
 void *streamFun()
 {
+	thread_stream_complete = 0;
 	openDevice(dev_path);	
 	init_device();	
 	start_capturing();	
 	mainstreamloop();
 	stop_capturing();
 	uninit_device();
+	close_device();
+	thread_stream_complete = 1;
+	return NULL;
 }
 
 void display_streamingMenu(void)
@@ -216,6 +221,7 @@ void display_streamingMenu(void)
 void streamingMenu(void)
 {
 	int option;
+	stream_menu = 1;
 	while(1)
 	{
 		display_streamingMenu();
@@ -224,10 +230,24 @@ void streamingMenu(void)
 		switch(option)
 		{
 			case SELECT_FORMAT:
+				if(selectFormat() != 0)
+					option = EXIT_STREAMING;
 				break;
 			case STREAM_ON:
+				if(thread_stream_complete == 0)
+					printf("\nAlready streaming");
+				else
+				{
+					if (pthread_create(&thread_streaming, NULL, streamFun, NULL))
+					{
+						fprintf(stderr, "create thread failed\n");
+						option = EXIT_STREAMING;
+				  	}
+				}
 				break;
 			case STREAM_OFF:
+				thread_exit_sig = 1;
+				pthread_join(thread_streaming, NULL);
 				break;
 			case EXIT_STREAMING:
 				break;
@@ -237,4 +257,5 @@ void streamingMenu(void)
 		if(option == EXIT_STREAMING)
 			break;
 	}
+	stream_menu = 0;
 }

@@ -23,7 +23,9 @@ double elapsed_time;
 pthread_t thread_control;
 pthread_t thread_streaming;
 CONTROLS *pcontrol = NULL;
-
+unsigned int cap_width = WIDTH, cap_height = WIDTH, cap_pix_format = v4l2_fourcc('Y', 'U', 'Y', 'V');
+char *cap_pix_format_str = PIXEL_FORMAT;
+int thread_stream_complete, capture_menu, stream_menu;
 
 /* Extern Varible */
 extern int thread_exit_sig;

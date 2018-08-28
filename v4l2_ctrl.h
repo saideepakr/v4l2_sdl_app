@@ -8,9 +8,12 @@ extern unsigned int width , height, capture, frame_count, type, pix_format;
 extern struct timeval start_time, end_time;
 extern double elapsed_time;
 extern CONTROLS *pcontrol;
+//extern unsigned int cap_width, cap_height, cap_pix_format;
+//extern char *cap_pix_format_str;
 
-
+/* Global variable declaration */
 FORMATS format;
+
 
 /* Function declaration */
 void deviceInfo(void);
@@ -35,6 +38,8 @@ int selectFormat(void);
 void displayFormats(void);
 void displayResolution(int);
 void displayFPS(int, int);
+void* loadFormats(void);
+void releaseFormats(void);
 
 /* Extern function declaration */
 extern void getint(int* pnum);

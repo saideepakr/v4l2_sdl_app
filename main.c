@@ -133,6 +133,9 @@ CLOSE_AND_EXIT:
 
 void display_v4l2Menu()
 {
+	printf("\n*********************************************************************\n");
+	printf("\t\tCamera Application");
+	printf("\n*********************************************************************\n");
 	printf("\n1) Still Capture");
 	printf("\n2) Streaming");
 	printf("\n3) Control Feature");
@@ -142,9 +145,6 @@ void display_v4l2Menu()
 void v4l2Menu(void)
 {
 	int option;
-	printf("\n*********************************************************************\n");
-	printf("\t\tCamera Application");
-	printf("\n*********************************************************************\n");
 	while(1)
 	{
 		display_v4l2Menu();
@@ -167,6 +167,7 @@ void v4l2Menu(void)
 			
 			case EXIT:
 				thread_exit_sig = 1;
+				pthread_join(thread_streaming, NULL);
 				break;
 			
 			default:

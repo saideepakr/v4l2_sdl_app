@@ -2,9 +2,13 @@
 #define FRAME_CAPTURE_COUNT 2
 #define TAKE_SNAP 3
 #define EXIT_STILL_CAPTURE 4
+#define WIDTH 640
+#define HEIGHT 480
+#define PIXEL_FORMAT "YUYV"
 
 /* Global variable declaration */
 int file;
+
 
 /* Extern variable declaration */
 extern int fd;
@@ -15,6 +19,12 @@ extern unsigned int n_buffers;
 extern unsigned int width , height, capture, frame_count, type, pix_format, streaming;
 extern struct timeval start_time, end_time;
 extern double elapsed_time;
+extern int thread_exit_sig;
+extern pthread_t thread_streaming;
+
+extern unsigned int cap_width, cap_height, cap_pix_format;
+extern char *cap_pix_format_str;
+extern int thread_stream_complete, capture_menu, stream_menu;;
 
 /* Function declaration */
 void errno_exit(const char *s);
@@ -38,3 +48,4 @@ void display_captureMenu(void);
 extern void frame_handler(void *pframe, int length);
 extern void getint(int* pnum);
 extern int selectFormat(void);
+extern void *streamFun();

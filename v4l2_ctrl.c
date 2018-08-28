@@ -862,11 +862,43 @@ void displayFPS(int format_option, int frame_option)
 	printf("\n%d) Exit from FPS", index + 1);
 }
 
+void releaseFormats(void)
+{
+	int format_index, frame_index, fps_index;
+	if(format.ufmtdesc != NULL)
+	{
+		for(format_index = 0; format_index < format.fmtcount; format_index++)
+		{
+			if(format.ufmtdesc[format_index].ufrmsizeenum != NULL)
+			{
+				for(frame_index = 0; frame_index < format.ufmtdesc[format_index].frmcount; frame_index++)
+				{
+					if(format.ufmtdesc[format_index].ufrmsizeenum [frame_index].frmivalenum != NULL)
+					{
+						free(format.ufmtdesc[format_index].ufrmsizeenum [frame_index].frmivalenum);
+						format.ufmtdesc[format_index].ufrmsizeenum [frame_index].frmivalenum = NULL;
+					}
+				}
+				free(format.ufmtdesc[format_index].ufrmsizeenum);
+				format.ufmtdesc[format_index].ufrmsizeenum = NULL;
+			}
+		}
+		free(format.ufmtdesc);
+		format.ufmtdesc = NULL;
+	}
+}
+
 int selectFormat(void)
 {
-	int format_option, frame_option, fps_option;
+	int format_option, frame_option, fps_option, valid_format = -1, valid_frame = -1, valid_fps = -1;
+	char buf[10], *ptemp;
+	struct v4l2_format fmt;
+	struct v4l2_fmtdesc fmtdesc;
 	if(loadFormats() == NULL)
+	{
+		releaseFormats();
 		return -1;
+	}
 	while(1)
 	{
 		displayFormats();
@@ -881,6 +913,7 @@ int selectFormat(void)
 		}
 		else
 		{	
+			valid_format = format_option;
 			while(1)
 			{
 				displayResolution(format_option);
@@ -895,6 +928,8 @@ int selectFormat(void)
 				}
 				else
 				{
+					
+					valid_frame = frame_option;
 					while(1)
 					{
 						displayFPS(format_option - 1, frame_option - 1);
@@ -915,5 +950,44 @@ int selectFormat(void)
 		}
 		break;
 	}
+	
+	if(capture_menu == 1)
+	{
+		//Capturing
+		if(valid_format != -1 && valid_frame != -1)
+		{
+			cap_width       = format.ufmtdesc[format_option - 1].ufrmsizeenum[frame_option - 1].discrete.width;
+			cap_height      = format.ufmtdesc[format_option - 1].ufrmsizeenum[frame_option - 1].discrete.height;
+			cap_pix_format  = format.ufmtdesc[format_option - 1].pixelformat;
+		}
+		else if(valid_format != -1)
+		{
+			cap_pix_format = format.ufmtdesc[format_option - 1].pixelformat;
+		}
+	
+		ptemp = (char*)&cap_pix_format;
+		sprintf(buf, "%c%c%c%c", *ptemp, *(ptemp + 1), *(ptemp + 2), *(ptemp + 3) );
+		cap_pix_format_str = strdup( buf );
+	}
+	else
+	{
+		//Streaming
+		if(valid_format != -1 && valid_frame != -1)
+		{
+			width       = format.ufmtdesc[format_option - 1].ufrmsizeenum[frame_option - 1].discrete.width;
+			height      = format.ufmtdesc[format_option - 1].ufrmsizeenum[frame_option - 1].discrete.height;
+			pix_format  = format.ufmtdesc[format_option - 1].pixelformat;
+		}
+		else if(valid_format != -1)
+		{
+			pix_format = format.ufmtdesc[format_option - 1].pixelformat;
+		}
+	
+		ptemp = (char*)&pix_format;
+		sprintf(buf, "%c%c%c%c", *ptemp, *(ptemp + 1), *(ptemp + 2), *(ptemp + 3) );
+		pix_format_str = strdup( buf );
+	}
+	printf("valid");
+	releaseFormats();
 	return 0;
 }

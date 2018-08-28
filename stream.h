@@ -18,6 +18,7 @@ TTF_Font* font;
 SDL_Surface* surfaceMessage;
 SDL_Rect Message_rect;
 char fps_buf[MAX_FPS_BUF];
+unsigned int stream_width;
 
 /* miscellanous */
 int thread_exit_sig = 0;
@@ -39,6 +40,8 @@ extern unsigned int n_buffers;
 extern unsigned int width , height, capture, frame_count, type, pix_format;
 extern struct timeval start_time, end_time;
 extern double elapsed_time;
+extern int thread_stream_complete, capture_menu, stream_menu;
+extern pthread_t thread_streaming;
 
 /* Extern function declaration */
 extern int read_frame(void);
@@ -49,3 +52,4 @@ extern void uninit_device(void);
 extern void init_device(void);
 extern void openDevice(char* dev_path);
 extern void close_device(void);
+extern int selectFormat(void);

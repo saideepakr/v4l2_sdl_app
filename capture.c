@@ -86,7 +86,7 @@ int read_frame(void)
                     return read_frame(); 
                 }
 				
-				if(streaming == 1)	//Streaming
+				if(thread_stream_complete == 0)	//Streaming
 					frame_handler(buffers[buf.index].start, buf.bytesused);
 				else //Capturing	
                 	process_image(buffers[buf.index].start, buf.bytesused);
@@ -131,7 +131,7 @@ int read_frame(void)
                     return read_frame(); 
                 }
 
-                if(streaming == 1)	//Streaming
+                if(thread_stream_complete == 1)	//Streaming
 					frame_handler(buffers[buf.index].start, buf.bytesused);
 				else //Capturing	
                 	process_image(buffers[buf.index].start, buf.bytesused);
@@ -159,16 +159,16 @@ void mainloop(void)
 	info = localtime( &rawtime );
 	
     char name_buf[100], suffix[10] = ".", width_height_time_str[50];
-    sprintf(width_height_time_str, "_%uX%u_%d_%d_%d_%d_%d_%d", width, height, 1900 + info->tm_year, info->tm_yday, info->tm_hour, info->tm_min, (int)info->tm_sec, (int)start_time.tv_usec/1000); 
+    sprintf(width_height_time_str, "_%uX%u_%d_%d_%d_%d_%d_%d", cap_width, cap_height, 1900 + info->tm_year, info->tm_yday, info->tm_hour, info->tm_min, (int)info->tm_sec, (int)start_time.tv_usec/1000); 
     
     strcpy(name_buf, outfile);
     strcat(name_buf, width_height_time_str);
-    if(strcmp(pix_format_str, "MJPG") == 0 && frame_count > 1)
+    if(strcmp(cap_pix_format_str, "MJPG") == 0 && frame_count > 1)
     	strcat(suffix, "mpg");
-    else if(strcmp(pix_format_str, "MJPG") == 0 && frame_count == 1)
+    else if(strcmp(cap_pix_format_str, "MJPG") == 0 && frame_count == 1)
     	strcat(suffix, "jpg");
    	else
-    	strcat(suffix, pix_format_str);
+    	strcat(suffix, cap_pix_format_str);
     strcat(name_buf, suffix);
 	if((file = open(name_buf, O_WRONLY | O_CREAT, 0660)) < 0)
 	{
@@ -176,11 +176,11 @@ void mainloop(void)
 		exit(1);
 	}
 	
-    unsigned int count;
+    unsigned int count, num = 0;
     
     count = frame_count;
 	
-	printf("\nRemaincount Frame interval(ms) - Frames per second(fps)\n");
+	printf("\nCount Frame interval(ms) - Frames per second(fps)\n");
 	gettimeofday(&start_time, NULL);
     while (count-- > 0) 
     {
@@ -195,11 +195,12 @@ void mainloop(void)
 		elapsed_time = (end_time.tv_sec - start_time.tv_sec) * 1000.0;      // sec to ms
 		elapsed_time += (end_time.tv_usec - start_time.tv_usec) / 1000.0;   // us to ms
 
-		printf("\r%d \t\t%.2lf - %.1lf", count, elapsed_time, 1000/elapsed_time);
+		printf("\r%d \t\t%.2lf - %.1lf", ++num, elapsed_time, 1000/elapsed_time);
 	
 		start_time = end_time;
 
     }
+    printf("\nCaptured File name and Path : %s", name_buf);
 	printf("\n");
 	close(file);
 }
@@ -497,7 +498,7 @@ void init_device(void)
         
         while (ioctl(fd, VIDIOC_ENUM_FMT, &fmtdesc) >= 0)
         {
-        	if(pix_format != fmtdesc.pixelformat)
+        	if(cap_pix_format != fmtdesc.pixelformat)
         		fmtdesc.index++;
         	else
         		break;
@@ -512,15 +513,32 @@ void init_device(void)
         CLEAR(fmt);
 
         fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        fmt.fmt.pix.width       = width;
-        fmt.fmt.pix.height      = height;
+		if(thread_stream_complete == 1)
+		{
+		    fmt.fmt.pix.width       = cap_width;
+		    fmt.fmt.pix.height      = cap_height;
+		}
+		else
+		{
+			fmt.fmt.pix.width       = width;
+		    fmt.fmt.pix.height 		= height;
+		}
         fmt.fmt.pix.pixelformat = fmtdesc.pixelformat;
         
         if (-1 == ioctl(fd, VIDIOC_S_FMT, &fmt))
                         errno_exit("VIDIOC_S_FMT");
-             
-        width = fmt.fmt.pix.width;
-        height = fmt.fmt.pix.height;	       
+        if(thread_stream_complete == 1)
+        {    
+		    cap_width = fmt.fmt.pix.width;
+		    cap_height = fmt.fmt.pix.height;
+			cap_pix_format = fmt.fmt.pix.pixelformat;
+		}
+		else
+		{
+			width = fmt.fmt.pix.width;
+		    height = fmt.fmt.pix.height;
+			pix_format = fmt.fmt.pix.pixelformat;
+		}	       
         
         switch (io) {
         case IO_METHOD_READ:
@@ -577,6 +595,7 @@ void captureFun(void)
 	mainloop();
 	stop_capturing();
 	uninit_device();
+	close_device();
 }
 
 void display_captureMenu(void)
@@ -593,6 +612,7 @@ void display_captureMenu(void)
 void captureMenu(void)
 {
 	int option;
+	capture_menu = 1;
 	while(1)
 	{
 		display_captureMenu();
@@ -605,8 +625,19 @@ void captureMenu(void)
 					option = EXIT_STILL_CAPTURE;
 				break;
 			case FRAME_CAPTURE_COUNT:
+				printf("\nPrevious count value : %u", frame_count);
+				printf("\nEnter the number of frames to be captured : ");
+				getint(&frame_count);
 				break;
 			case TAKE_SNAP:
+				thread_exit_sig = 1;
+				pthread_join(thread_streaming, NULL);
+				captureFun();
+				if (pthread_create(&thread_streaming, NULL, streamFun, NULL))
+				{
+					fprintf(stderr, "create thread failed\n");
+					option = EXIT_STILL_CAPTURE;
+			  	}
 				break;
 			case EXIT_STILL_CAPTURE:
 				break;
@@ -616,4 +647,5 @@ void captureMenu(void)
 		if(option == EXIT_STILL_CAPTURE)
 			break;
 	}
+	capture_menu = 0;
 }
